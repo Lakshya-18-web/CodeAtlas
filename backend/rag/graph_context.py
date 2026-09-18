@@ -51,6 +51,7 @@ def build_graph_context(graph, hits, hops=1, max_nodes=30):
 
     selected_nodes = set()
 
+    # Add retrieved nodes and their graph neighbors
     for hit in hits:
         node_id = hit.get("node_id")
 
@@ -58,6 +59,10 @@ def build_graph_context(graph, hits, hops=1, max_nodes=30):
             selected_nodes.update(
                 get_neighbors(graph, node_id, hops)
             )
+
+            # Explicitly include callers and callees
+            selected_nodes.update(get_callers(graph, node_id))
+            selected_nodes.update(get_callees(graph, node_id))
 
     selected_nodes = list(selected_nodes)[:max_nodes]
 
@@ -121,7 +126,6 @@ def build_graph_context(graph, hits, hops=1, max_nodes=30):
         "relationships": relationships,
         "text": "\n".join(lines)
     }
-
 
 def get_callers(graph, node_id):
     if node_id not in graph:
