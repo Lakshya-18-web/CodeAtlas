@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function RiskView() {
   const [risks, setRisks] = useState([]);
@@ -24,14 +28,24 @@ export default function RiskView() {
     loadRisks();
   }, []);
 
-  const high = risks.filter((r) => r.level === "HIGH").length;
-  const medium = risks.filter((r) => r.level === "MEDIUM").length;
-  const low = risks.filter((r) => r.level === "LOW").length;
+  const high = risks.filter(
+    (r) => r.risk_level?.toUpperCase() === "HIGH"
+  ).length;
+
+  const medium = risks.filter(
+    (r) => r.risk_level?.toUpperCase() === "MEDIUM"
+  ).length;
+
+  const low = risks.filter(
+    (r) => r.risk_level?.toUpperCase() === "LOW"
+  ).length;
 
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-zinc-500">Loading risk analysis...</p>
+        <p className="text-zinc-500">
+          Loading risk analysis...
+        </p>
       </div>
     );
   }
@@ -43,7 +57,10 @@ export default function RiskView() {
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-            <ShieldAlert size={20} className="text-zinc-300" />
+            <ShieldAlert
+              size={20}
+              className="text-zinc-300"
+            />
           </div>
 
           <div>
@@ -104,61 +121,64 @@ export default function RiskView() {
 
           <div className="divide-y divide-white/5">
 
-            {risks.map((risk) => (
+            {risks.map((risk) => {
 
-              <div
-                key={risk.node_id}
-                className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition"
-              >
+              const level =
+                risk.risk_level?.toUpperCase() || "LOW";
 
-                <div className="flex items-center gap-4">
+              return (
+                <div
+                  key={risk.id}
+                  className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition"
+                >
 
-                  <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
-                    <ShieldAlert
-                      size={17}
-                      className="text-zinc-400"
-                    />
-                  </div>
+                  <div className="flex items-center gap-4">
 
-                  <div>
-                    <p className="text-sm font-medium text-zinc-200">
-                      {risk.node_id}
-                    </p>
-
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {risk.reasons.map((reason) => (
-                        <span
-                          key={reason}
-                          className="text-xs text-zinc-500 bg-white/5 px-2 py-1 rounded"
-                        >
-                          {reason}
-                        </span>
-                      ))}
+                    <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
+                      <ShieldAlert
+                        size={17}
+                        className="text-zinc-400"
+                      />
                     </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">
+                        {risk.id}
+                      </p>
+
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {risk.reasons?.map((reason) => (
+                          <span
+                            key={reason}
+                            className="text-xs text-zinc-500 bg-white/5 px-2 py-1 rounded"
+                          >
+                            {reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div className="flex items-center gap-6">
+
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-600">
+                        Score
+                      </p>
+
+                      <p className="text-lg font-semibold">
+                        {risk.risk_score?.toFixed(1)}
+                      </p>
+                    </div>
+
+                    <RiskBadge level={level} />
+
                   </div>
 
                 </div>
-
-
-                <div className="flex items-center gap-6">
-
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-600">
-                      Score
-                    </p>
-
-                    <p className="text-lg font-semibold">
-                      {risk.score}
-                    </p>
-                  </div>
-
-                  <RiskBadge level={risk.level} />
-
-                </div>
-
-              </div>
-
-            ))}
+              );
+            })}
 
           </div>
 
@@ -199,7 +219,8 @@ function RiskSummary({ label, value, icon }) {
 function RiskBadge({ level }) {
   const styles = {
     HIGH: "bg-red-500/10 text-red-400 border-red-500/20",
-    MEDIUM: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+    MEDIUM:
+      "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
     LOW: "bg-green-500/10 text-green-400 border-green-500/20",
   };
 

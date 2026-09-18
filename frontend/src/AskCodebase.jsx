@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MessageSquare,
   Send,
@@ -10,6 +10,34 @@ export default function AskCodebase() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Loading messages while CodeAtlas processes the question
+  const [loadingMessage, setLoadingMessage] = useState(
+    "Retrieving relevant code..."
+  );
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingMessage("Retrieving relevant code...");
+      return;
+    }
+
+    const messages = [
+      "Retrieving relevant code...",
+      "Building graph context...",
+      "Understanding your codebase...",
+      "Generating answer...",
+    ];
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index = (index + 1) % messages.length;
+      setLoadingMessage(messages[index]);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   async function askQuestion() {
     if (!question.trim()) return;
@@ -143,8 +171,12 @@ export default function AskCodebase() {
                 className="text-zinc-500 mx-auto mb-3 animate-pulse"
               />
 
-              <p className="text-sm text-zinc-400">
-                Analyzing your codebase...
+              <p className="text-sm text-zinc-300 font-medium">
+                {loadingMessage}
+              </p>
+
+              <p className="text-xs text-zinc-600 mt-2">
+                CodeAtlas is working on your question...
               </p>
 
             </div>
@@ -240,7 +272,8 @@ export default function AskCodebase() {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your codebase..."
               rows={1}
-              className="flex-1 resize-none bg-transparent outline-none text-sm text-zinc-300 placeholder:text-zinc-600 px-2 py-2"
+              disabled={loading}
+              className="flex-1 resize-none bg-transparent outline-none text-sm text-zinc-300 placeholder:text-zinc-600 px-2 py-2 disabled:opacity-50"
             />
 
             <button

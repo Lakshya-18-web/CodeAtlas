@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Network,
@@ -27,6 +27,34 @@ function App() {
   const [repository, setRepository] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+
+  // Loading messages while repository is being analyzed
+  const [analysisMessage, setAnalysisMessage] = useState(
+    "Analyzing repository..."
+  );
+
+  useEffect(() => {
+    if (!uploading) {
+      setAnalysisMessage("Analyzing repository...");
+      return;
+    }
+
+    const messages = [
+      "Analyzing repository...",
+      "Building code graph...",
+      "Preparing AI context...",
+      "Almost there...",
+    ];
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index = (index + 1) % messages.length;
+      setAnalysisMessage(messages[index]);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [uploading]);
 
   async function analyzeRepository(file) {
     if (!file) return;
@@ -117,8 +145,6 @@ function App() {
             onClick={() => setActivePage("Risk View")}
           />
 
-          
-
           <NavItem
             icon={<MessageSquare size={18} />}
             label="Ask Codebase"
@@ -164,6 +190,7 @@ function App() {
           <Dashboard
             stats={stats}
             uploading={uploading}
+            analysisMessage={analysisMessage}
             error={error}
             onAnalyze={analyzeRepository}
             onCodeMap={() => setActivePage("Code Map")}
@@ -186,6 +213,7 @@ function App() {
 function Dashboard({
   stats,
   uploading,
+  analysisMessage,
   error,
   onAnalyze,
   onCodeMap,
@@ -205,14 +233,21 @@ function Dashboard({
             accept=".zip"
             className="hidden"
             onChange={(e) => onAnalyze(e.target.files[0])}
+            disabled={uploading}
           />
 
-          <span className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-zinc-200 transition">
+          <span
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              uploading
+                ? "bg-zinc-200 text-black cursor-wait"
+                : "bg-white text-black hover:bg-zinc-200"
+            }`}
+          >
 
             {uploading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Analyzing...
+                {analysisMessage}
               </>
             ) : (
               <>

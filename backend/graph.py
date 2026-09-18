@@ -1,19 +1,17 @@
 import networkx as nx
 
+
 def build_graph(parsed_files):
     graph = nx.DiGraph()
 
-    # Add file, class and function nodes
     for file_data in parsed_files:
         file_name = file_data["file"]
 
-        # File node
         graph.add_node(
             file_name,
             type="file"
         )
 
-        # Function nodes
         for function in file_data["functions"]:
             function_id = f"{file_name}:{function['name']}"
 
@@ -28,14 +26,12 @@ def build_graph(parsed_files):
                 code=function["code"]
             )
 
-            # Function belongs to file
             graph.add_edge(
                 file_name,
                 function_id,
-                type="CONTAINS"
+                relation="CONTAINS"
             )
 
-        # Class nodes
         for class_data in file_data["classes"]:
             class_id = f"{file_name}:{class_data['name']}"
 
@@ -50,56 +46,75 @@ def build_graph(parsed_files):
             graph.add_edge(
                 file_name,
                 class_id,
-                type="CONTAINS"
+                relation="CONTAINS"
             )
 
-    # Create lookup:
-    # function name -> function node
-    function_lookup = {}
+    functions_by_file = {}
 
     for node, data in graph.nodes(data=True):
-        if data.get("type") == "function":
-            function_lookup[data["name"]] = node
+        if data.get("type") != "function":
+            continue
 
-    # Add IMPORTS and CALLS relationships
+        file_name = data["file"]
+        function_name = data["name"]
+
+        functions_by_file.setdefault(
+            file_name,
+            {}
+        )
+
+        functions_by_file[file_name][
+            function_name
+        ] = node
+
     for file_data in parsed_files:
-
         file_name = file_data["file"]
 
-        # IMPORTS
         for imported_module in file_data["imports"]:
+            module_parts = imported_module.split(".")
 
-            imported_file = imported_module.split(".")[-1] + ".py"
+            possible_files = [
+                imported_module.replace(".", "/") + ".py",
+                "/".join(module_parts) + "/__init__.py",
+                module_parts[-1] + ".py"
+            ]
 
-            if graph.has_node(imported_file):
-                graph.add_edge(
-                    file_name,
-                    imported_file,
-                    type="IMPORTS"
-                )
+            for imported_file in possible_files:
+                if graph.has_node(imported_file):
+                    graph.add_edge(
+                        file_name,
+                        imported_file,
+                        relation="IMPORTS"
+                    )
+                    break
 
-        # CALLS
+        local_functions = functions_by_file.get(
+            file_name,
+            {}
+        )
+
         for function in file_data["functions"]:
-
-            source = f"{file_name}:{function['name']}"
+            source = (
+                f"{file_name}:{function['name']}"
+            )
 
             for called_function in function["calls"]:
 
-                target = function_lookup.get(called_function)
+                target = local_functions.get(
+                    called_function
+                )
 
                 if target and target != source:
                     graph.add_edge(
                         source,
                         target,
-                        type="CALLS"
+                        relation="CALLS"
                     )
 
     return graph
 
 
 def graph_to_json(graph):
-    """Convert NetworkX graph into frontend-friendly JSON."""
-
     nodes = []
 
     for node_id, data in graph.nodes(data=True):

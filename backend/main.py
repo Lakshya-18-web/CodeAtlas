@@ -1,15 +1,22 @@
 from fastapi import FastAPI, UploadFile, File
+from backend.risk.feature_engineering import build_feature_table
+from backend.risk.predictor import RiskPredictor
 import zipfile
 import tempfile
 import os
 
-from parser import analyze_repository
-from graph import build_graph, graph_to_json
+from backend.parser import analyze_repository
+from backend.graph import build_graph, graph_to_json
+from backend.rag.pipeline import CodeAtlasRAG
+from pydantic import BaseModel
 
 
 app = FastAPI(title="CodeAtlas API")
 
 current_graph = None
+current_analysis = None
+current_rag = None
+risk_predictor = RiskPredictor()
 
 
 @app.get("/")
@@ -19,11 +26,9 @@ def root():
 
 @app.post("/api/analyze")
 async def analyze(file: UploadFile = File(...)):
-
-    global current_graph
+    global current_graph, current_analysis, current_rag
 
     with tempfile.TemporaryDirectory() as temp_dir:
-
         zip_path = os.path.join(temp_dir, file.filename)
 
         with open(zip_path, "wb") as f:
@@ -35,8 +40,15 @@ async def analyze(file: UploadFile = File(...)):
             zip_ref.extractall(extract_path)
 
         parsed_files = analyze_repository(extract_path)
-
+        current_analysis = parsed_files
         current_graph = build_graph(parsed_files)
+
+        current_rag = CodeAtlasRAG(
+            current_analysis,
+            current_graph
+        )
+
+        current_rag.build()
 
         return {
             "files": len(parsed_files),
@@ -58,7 +70,6 @@ def get_graph():
 
 @app.get("/api/graph/node/{node_id:path}")
 def get_node(node_id: str):
-
     if current_graph is None:
         return {"error": "No repository analyzed yet"}
 
@@ -72,14 +83,18 @@ def get_node(node_id: str):
     dependencies = []
 
     for source, target, data in current_graph.edges(data=True):
+        relation = data.get(
+            "relation",
+            data.get("type", "")
+        )
 
-        if target == node_id and data["type"] == "CALLS":
+        if target == node_id and relation == "CALLS":
             callers.append(source)
 
-        if source == node_id and data["type"] == "CALLS":
+        if source == node_id and relation == "CALLS":
             callees.append(target)
 
-        if source == node_id and data["type"] == "IMPORTS":
+        if source == node_id and relation == "IMPORTS":
             dependencies.append(target)
 
     return {
@@ -93,69 +108,26 @@ def get_node(node_id: str):
 
 @app.get("/api/risk")
 def get_risk():
-
-    if current_graph is None:
+    if current_graph is None or current_analysis is None:
         return {"error": "No repository analyzed yet"}
 
-    risks = []
+    feature_rows = build_feature_table(
+        current_analysis,
+        current_graph
+    )
 
-    for node_id, data in current_graph.nodes(data=True):
+    predictions = risk_predictor.predict(feature_rows)
 
-        if data.get("type") != "function":
-            continue
+    return predictions
 
-        loc = data.get("loc", 0)
 
-        callers = 0
-        callees = 0
+class AskRequest(BaseModel):
+    question: str
 
-        for source, target, edge_data in current_graph.edges(data=True):
 
-            if edge_data["type"] == "CALLS":
+@app.post("/api/ask")
+def ask_codebase(request: AskRequest):
+    if current_rag is None:
+        return {"error": "No repository analyzed yet"}
 
-                if target == node_id:
-                    callers += 1
-
-                if source == node_id:
-                    callees += 1
-
-        score = 20
-
-        if loc > 5:
-            score += 20
-
-        if callees >= 2:
-            score += 30
-
-        if callers >= 2:
-            score += 20
-
-        if score >= 60:
-            level = "HIGH"
-        elif score >= 40:
-            level = "MEDIUM"
-        else:
-            level = "LOW"
-
-        reasons = []
-
-        if loc > 5:
-            reasons.append("Large function")
-
-        if callees >= 2:
-            reasons.append("Calls multiple functions")
-
-        if callers >= 2:
-            reasons.append("Used by multiple functions")
-
-        if not reasons:
-            reasons.append("Low structural complexity")
-
-        risks.append({
-            "node_id": node_id,
-            "score": score,
-            "level": level,
-            "reasons": reasons
-        })
-
-    return risks
+    return current_rag.ask(request.question)
