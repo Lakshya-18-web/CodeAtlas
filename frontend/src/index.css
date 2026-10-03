@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #09090b;
+  color: #fafafa;
+}
+
+.react-flow__edge-textbg {
+  fill: #18181b;
+  stroke: #27272a;
+}
+
+.react-flow__edge-text {
+  fill: #a1a1aa;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.react-flow__minimap {
+  background: #111113;
+  border: 1px solid #27272a;
+}
+
+.react-flow__controls {
+  background: #111113;
+  border: 1px solid #27272a;
+}
+
+.react-flow__controls-button {
+  background: #111113;
+  border-bottom: 1px solid #27272a;
+  color: #a1a1aa;
+}
+
+.react-flow__controls-button:hover {
+  background: #18181b;
+}
+
+.react-flow__controls-button svg {
+  fill: #a1a1aa;
+}
+
+
+/* ================================
+   CodeAtlas Light Blue Theme
+   ================================ */
+
+[data-theme="light"] {
+  color-scheme: light;
+  background: #f4f8ff;
+  color: #172033;
+}
+
+/* Main backgrounds */
+[data-theme="light"] [class~="bg-[#09090b]"] {
+  background: #f4f8ff !important;
+}
+
+[data-theme="light"] [class~="bg-[#0d0d0f]"] {
+  background: #ffffff !important;
+}
+
+[data-theme="light"] [class~="bg-[#111113]"] {
+  background: #f8fbff !important;
+}
+
+[data-theme="light"] [class~="bg-[#18181b]"] {
+  background: #eef5ff !important;
+}
+
+/* Dark transparent surfaces → blue tinted surfaces */
+[data-theme="light"] [class~="bg-black/20"] {
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+[data-theme="light"] [class~="bg-black/40"] {
+  background: rgba(37, 99, 235, 0.06) !important;
+}
+
+[data-theme="light"] [class~="bg-white/5"] {
+  background: rgba(37, 99, 235, 0.05) !important;
+}
+
+[data-theme="light"] [class~="bg-white/10"] {
+  background: rgba(37, 99, 235, 0.08) !important;
+}
+
+/* Text */
+[data-theme="light"] [class~="text-white"] {
+  color: #172033 !important;
+}
+
+[data-theme="light"] [class~="text-zinc-200"] {
+  color: #25324a !important;
+}
+
+[data-theme="light"] [class~="text-zinc-300"] {
+  color: #34445f !important;
+}
+
+[data-theme="light"] [class~="text-zinc-400"] {
+  color: #52627d !important;
+}
+
+[data-theme="light"] [class~="text-zinc-500"] {
+  color: #64748b !important;
+}
+
+[data-theme="light"] [class~="text-zinc-600"] {
+  color: #8290a8 !important;
+}
+
+/* Borders */
+[data-theme="light"] [class~="border-white/5"] {
+  border-color: #e5edfa !important;
+}
+
+[data-theme="light"] [class~="border-white/10"] {
+  border-color: #d8e4f7 !important;
+}
+
+[data-theme="light"] [class~="border-white/20"] {
+  border-color: #c5d6f0 !important;
+}
+
+/* Hover */
+[data-theme="light"] [class~="hover:text-white"]:hover {
+  color: #2563eb !important;
+}
